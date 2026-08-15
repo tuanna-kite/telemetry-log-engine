@@ -1,75 +1,104 @@
-## LogEntry
+# LogEntry
 
 `LogEntry` represents the value of one parsed log event.
 
-### Representation
+## Representation
 
-I will use a Java `record`
+I use a Java `record` because:
 
-Reasons:
-
-- `LogEntry` currently has **value semantics**.
+- `LogEntry` has value semantics.
 - Its state is completely described by its components.
-- There is no independent domain identity.
-- Two `LogEntry` instances containing the same component values should be logically equal
+- There is currently no independent domain identity.
+- Two instances with equal component values represent the same value.
 - Its state should not change after construction.
-- A record expresses these semantics directly with less implementation boilerplate.
+- A record expresses these semantics with minimal boilerplate.
 
------
+A record does not guarantee deep immutability for mutable component
+objects. The current component types are suitable for an effectively
+immutable value.
 
-### Fields
+## Fields
 
-#### `timestamp: Instant`
+### `timestamp: Instant`
 
-Represents the absolute point in time when the event occured.
+Represents the absolute point in time when the event occurred.
 
-I prefer `Instant` over `String` because the value has temporal semantics rather than textual semantics.
+`Instant` is preferred over `String` because the value has temporal
+semantics rather than textual semantics.
 
-I prefer `Instant` over `LocalDateTime` because the log timestamp represents an absolute point on the timeline rather
-than a local wall-clock time.
+It is preferred over `LocalDateTime` because the event represents an
+absolute point on the timeline rather than a local wall-clock time.
 
-#### `level: LogLevel`
+### `level: LogLevel`
 
 Supported values:
+
 `TRACE`, `DEBUG`, `INFO`, `WARN`, `ERROR`
 
-The domain contains a finite set of valid values, so an enum restricts the representable state space and prevents
-arbitrary level strings.
+The domain has a finite set of valid values, so an enum restricts the
+representable state space and prevents arbitrary values.
 
-#### `service: String`
+### `serviceName: String`
 
 A `String` is sufficient for the current requirements.
 
-A dedicated `ServiceName` value object may become useful later if service names acquire additional validation or domain
-behavior.
+A dedicated `ServiceName` value object may become useful if service
+names later acquire additional validation or domain behavior.
 
-#### `message: String`
+### `message: String`
 
 Stores the event message.
 
-An empty message is valid, but `null` is not.
+An empty string is valid, but `null` is not.
 
------
+## Invariants
 
-### Invariants
-
-For every valid `LogEntry`:
+If a `LogEntry` exists:
 
 - `timestamp != null`
 - `level != null`
-- `service != null`
-- `!service.isBlank()`
+- `serviceName != null`
+- `!serviceName.isBlank()`
 - `message != null`
 
-------
+## Validation Strategy
 
-### Non-goal
+Required null references are rejected with `NullPointerException`.
+
+A non-null but blank `serviceName` is rejected with
+`IllegalArgumentException`.
+
+`LogEntry` does not normalize input.
+
+## Equality Semantics
+
+Two instances with equal record components represent the same value.
+
+Equal instances must therefore also produce equal `hashCode()` values.
+
+## Boundary Responsibility
+
+`LogEntry` enforces intrinsic domain invariants.
+
+Raw parsing, textual timestamp conversion, log-level parsing, and input
+normalization belong to the parser/boundary layer.
+
+## Non-Goals
 
 Current `LogEntry` does not handle:
 
-- raw log parsing
-- normalization
-- persistence
-- event identity
-- service registry validation
-- arbitrary log levels
+- raw log parsing;
+- normalization;
+- persistence;
+- event identity;
+- service registry validation;
+- dynamic or user-defined log levels.
+
+## Tests Covered
+
+- Valid values preserve all components.
+- Empty messages are accepted.
+- Null required components are rejected.
+- Blank service names are rejected.
+- Equal component values produce equal entries and equal hash codes.
+- Different component values produce unequal entries.
