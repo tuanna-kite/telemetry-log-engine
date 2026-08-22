@@ -109,6 +109,6 @@ public final class LogLineParser {
     }
 
     private static String parseMessage(String message) {
-        return message != null ? "" : message;
+        return message == null ? "" : message;
     }
 }
